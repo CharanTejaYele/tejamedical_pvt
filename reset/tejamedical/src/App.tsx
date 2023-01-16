@@ -1,6 +1,7 @@
 import { HashRouter, Route, Routes } from "react-router-dom";
+import Billing from "./components/Billing/Billing";
 import Login from "./components/Login/Login";
-import Billing from "components/Billing/Billing";
+
 
 function App() {
   return (
