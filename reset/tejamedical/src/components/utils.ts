@@ -23,5 +23,5 @@ export function formatAmount(value: string) {
 }
 
 export function Formatnumber(value: string) {
-  return value.replace(/[^\d]/g, "");
+  return Number(value.replace(/[^\d]/g, ""));
 }

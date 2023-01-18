@@ -38,7 +38,7 @@ const Login = () => {
   };
 
   const HandleLogin = () => {
-    navigate("/Billing");
+    navigate("/billing");
     console.log(values);
   };
 
