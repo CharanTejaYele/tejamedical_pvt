@@ -45,7 +45,6 @@ const Registration = () => {
       setErrordetails({ ...Errordetails, [prop]: "" });
     };
 
-  const database = getDatabase(app);
 
   function Validate() {
     if (NewUser.RefererMobileNumber.length !== 0) {
@@ -59,39 +58,7 @@ const Registration = () => {
     }
     return true;
   }
-  function AddToReferrer(
-    RefereeMobileNumber: string,
-    ReffereeBillAmount: Number,
-    PurchaseDate: Date
-  ) {
-    console.log(RefereeMobileNumber);
-    get(child(dbRef, `users/${RefereeMobileNumber}`))
-      .then((snapshot) => {
-        if (snapshot.exists()) {
-          console.log(snapshot.val());
-          update(
-            ref(
-              db,
-              "users/" +
-                snapshot.val().RefererMobileNumber +
-                "/wallet/" +
-                RefereeMobileNumber +
-                "/"
-            ),
-            {
-              [`${PurchaseDate}`]: ReffereeBillAmount,
-            }
-          ).then(() => {
-            window.location.reload();
-          });
-        } else {
-          console.log(RefereeMobileNumber + "Didn't found");
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }
+
 
   function handleAddDetails() {
     setAPICALLED(true);
@@ -102,7 +69,6 @@ const Registration = () => {
             update(ref(db, "users/" + NewUser.PhoneNumber), {
               CustomerName: NewUser.CustomerName,
               RefererMobileNumber: NewUser.RefererMobileNumber,
-              wallet: "0",
             });
             alert("User Successfully Registered");
             window.location.reload();

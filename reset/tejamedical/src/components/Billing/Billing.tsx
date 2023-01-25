@@ -85,33 +85,34 @@ const Billing = () => {
     }
     return true;
   }
+
   function AddToReferrer(
     RefereeMobileNumber: string,
-    ReffereeBillAmount: Number,
+    AmountToAddToWallet: Number,
     PurchaseDate: Date
   ) {
     console.log(RefereeMobileNumber);
     get(child(dbRef, `users/${RefereeMobileNumber}`))
       .then((snapshot) => {
-        if (snapshot.exists()) {
-          console.log(snapshot.val());
+        console.log(snapshot.val());
+        if (snapshot.val().RefererMobileNumber !== "") {
           update(
             ref(
               db,
               "users/" +
                 snapshot.val().RefererMobileNumber +
-                "/wallet/" +
+                "/Wallet/" +
                 RefereeMobileNumber +
                 "/"
             ),
             {
-              [`${PurchaseDate}`]: ReffereeBillAmount,
+              [`${PurchaseDate}`]: AmountToAddToWallet,
             }
           ).then(() => {
             window.location.reload();
           });
         } else {
-          console.log(RefereeMobileNumber + "Didn't found");
+          console.log(RefereeMobileNumber + " : Has no Referrer");
         }
       })
       .catch((error) => {
@@ -124,41 +125,62 @@ const Billing = () => {
     if (Validate()) {
       const date = new Date();
       if (NewUser.NewUser) {
-        get(child(dbRef, `users/${NewUser.RefererMobileNumber}`))
-          .then((snapshot) => {
-            if (snapshot.exists()) {
-              update(ref(db, "users/" + BillDetails.PhoneNumber), {
-                CustomerName: NewUser.CustomerName,
-                RefererMobileNumber: NewUser.RefererMobileNumber,
-                wallet: "0",
-                "All Bills": {
-                  [`${date}`]: Formatnumber(BillDetails.Amount),
-                },
-              });
-              AddToReferrer(
-                BillDetails.PhoneNumber,
-                Formatnumber(BillDetails.Amount) / 10,
-                date
-              );
-            } else {
-              alert("Enter Correct Referrer Number");
-              setAPICALLED(false);
-            }
-          })
-          .catch((error) => {
-            console.error(error);
+        if (NewUser.RefererMobileNumber === "") {
+          update(ref(db, "users/" + BillDetails.PhoneNumber), {
+            CustomerName: NewUser.CustomerName,
+            RefererMobileNumber: NewUser.RefererMobileNumber,
+            "AllBills": {
+              [`${date}`]: Formatnumber(BillDetails.Amount),
+            },
+          }).then(() => {
+            window.location.reload();
           });
+        } else {
+          get(child(dbRef, `users/${NewUser.RefererMobileNumber}`))
+            .then((snapshot) => {
+              if (snapshot.exists()) {
+                console.log(snapshot.val());
+                update(ref(db, "users/" + BillDetails.PhoneNumber), {
+                  CustomerName: NewUser.CustomerName,
+                  RefererMobileNumber: NewUser.RefererMobileNumber,
+                  "AllBills": {
+                    [`${date}`]: Formatnumber(BillDetails.Amount),
+                  },
+                });
+                AddToReferrer(
+                  BillDetails.PhoneNumber,
+                  Formatnumber(BillDetails.Amount) / 10,
+                  date
+                );
+              } else {
+                alert("Enter Correct Referrer Number");
+                setAPICALLED(false);
+              }
+            })
+            .catch((error) => {
+              console.error(error);
+            });
+        }
       } else {
         get(child(dbRef, `users/${BillDetails.PhoneNumber}`))
           .then((snapshot) => {
             if (snapshot.exists()) {
-              console.log("False");
+              console.log(snapshot.val());
               update(
-                ref(db, "users/" + BillDetails.PhoneNumber + "/All Bills/"),
+                ref(db, "users/" + BillDetails.PhoneNumber + "/AllBills/"),
                 {
                   [`${date}`]: Formatnumber(BillDetails.Amount),
                 }
               );
+
+              if (snapshot.val().RefererMobileNumber !== "") {
+                AddToReferrer(
+                  BillDetails.PhoneNumber,
+                  Formatnumber(BillDetails.Amount) / 10,
+                  date
+                );
+              }
+
               AddToReferrer(
                 BillDetails.PhoneNumber,
                 Formatnumber(BillDetails.Amount) / 10,
