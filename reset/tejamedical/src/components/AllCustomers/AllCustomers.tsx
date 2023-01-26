@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { getDatabase, ref, onValue } from "firebase/database";
 import { ICustomerDetails, NotExpired } from "../Customers/CustomerListUtils";
 import {
+  Box,
   Paper,
   Table,
   TableBody,
@@ -87,7 +88,6 @@ const AllCustomers = () => {
     );
   }, []);
 
-
   onAuthStateChanged(auth, (user) => {
     if (!user) {
       navigate("/login");
@@ -95,49 +95,54 @@ const AllCustomers = () => {
   });
 
   return (
-    <TableContainer component={Paper} sx={{ maxWidth: 900, margin: "auto" }}>
-      <Table aria-label="simple table">
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ fontWeight: "600" }}>Customer Name</TableCell>
-            <TableCell sx={{ fontWeight: "600" }} align="right">
-              Phone Number
-            </TableCell>
-            <TableCell sx={{ fontWeight: "600" }} align="right">
-              Referer Number
-            </TableCell>
-            <TableCell sx={{ fontWeight: "600" }} align="right">
-              Current Wallet
-            </TableCell>
-            <TableCell sx={{ fontWeight: "600" }} align="right">
-              Total Purchased
-            </TableCell>
-            <TableCell sx={{ fontWeight: "600" }} align="right">
-              Expired Wallet
-            </TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {Customers.map((row) => (
-            <TableRow
-              key={row.MobileNumber}
-              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
-            >
-              <TableCell component="th" scope="row">
-                {row.CustomerName}
+    <Box sx={{ padding: "20px" }}>
+      <TableContainer
+        component={Paper}
+        sx={{ maxWidth: 900, margin: "auto", minWidth: "350px" }}
+      >
+        <Table aria-label="simple table">
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ fontWeight: "600" }}>Customer Name</TableCell>
+              <TableCell sx={{ fontWeight: "600" }} align="right">
+                Phone Number
               </TableCell>
-              <TableCell align="right">{row.MobileNumber}</TableCell>
-              <TableCell align="right">
-                {row.RefererMobileNumber || ""}
+              <TableCell sx={{ fontWeight: "600" }} align="right">
+                Referer Number
               </TableCell>
-              <TableCell align="right">{row.CurrentWallet}</TableCell>
-              <TableCell align="right">{row.TotalPurchase}</TableCell>
-              <TableCell align="right">{row.ExpiredWallet}</TableCell>
+              <TableCell sx={{ fontWeight: "600" }} align="right">
+                Current Wallet
+              </TableCell>
+              <TableCell sx={{ fontWeight: "600" }} align="right">
+                Total Purchased
+              </TableCell>
+              <TableCell sx={{ fontWeight: "600" }} align="right">
+                Expired Wallet
+              </TableCell>
             </TableRow>
-          ))}
-        </TableBody>
-      </Table>
-    </TableContainer>
+          </TableHead>
+          <TableBody>
+            {Customers.map((row) => (
+              <TableRow
+                key={row.MobileNumber}
+                sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+              >
+                <TableCell component="th" scope="row">
+                  {row.CustomerName}
+                </TableCell>
+                <TableCell align="right">{row.MobileNumber}</TableCell>
+                <TableCell align="right">
+                  {row.RefererMobileNumber || ""}
+                </TableCell>
+                <TableCell align="right">{row.CurrentWallet}</TableCell>
+                <TableCell align="right">{row.TotalPurchase}</TableCell>
+                <TableCell align="right">{row.ExpiredWallet}</TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Box>
   );
 };
 

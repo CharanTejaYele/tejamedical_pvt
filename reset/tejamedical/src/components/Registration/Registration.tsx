@@ -1,12 +1,22 @@
 import { useState } from "react";
 import { AddCustomerBox, StyledTextField } from "../Billing/Billing.styles";
 import { Button, Snackbar, Typography } from "@mui/material";
-import { formatPhoneNumber } from "../utils";
 import { child, get, getDatabase, ref, update } from "firebase/database";
+import { onAuthStateChanged } from "firebase/auth";
+import { useNavigate } from "react-router-dom";
+import { formatPhoneNumber } from "../utils";
+import { auth } from "../../firebase-config";
 
 const Registration = () => {
   const db = getDatabase();
   const dbRef = ref(getDatabase());
+  const navigate = useNavigate();
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) {
+      navigate("/login");
+    }
+  });
 
   const [SnackbarDetails, setSnackbarDetails] = useState({
     isopen: false,
