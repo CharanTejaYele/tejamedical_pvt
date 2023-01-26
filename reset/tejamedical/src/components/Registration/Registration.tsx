@@ -1,17 +1,20 @@
 import { useState } from "react";
 import { AddCustomerBox, StyledTextField } from "../Billing/Billing.styles";
-import { Button, Typography } from "@mui/material";
+import { Button, Snackbar, Typography } from "@mui/material";
 import { formatPhoneNumber } from "../utils";
 import { child, get, getDatabase, ref, update } from "firebase/database";
-import { app } from "../../firebase-config";
 
 const Registration = () => {
   const db = getDatabase();
   const dbRef = ref(getDatabase());
 
+  const [SnackbarDetails, setSnackbarDetails] = useState({
+    isopen: false,
+    message: "",
+  });
+
   const [Errordetails, setErrordetails] = useState({
     PhoneNumber: "",
-    Amount: "",
     CustomerName: "",
     RefererMobileNumber: "",
   });
@@ -45,52 +48,32 @@ const Registration = () => {
       setErrordetails({ ...Errordetails, [prop]: "" });
     };
 
-  const database = getDatabase(app);
-
   function Validate() {
-    if (NewUser.RefererMobileNumber.length !== 0) {
-      if (NewUser.RefererMobileNumber.length !== 12) {
-        setErrordetails({
-          ...Errordetails,
-          RefererMobileNumber: "Enter 10 Digit Mobile Number of the Referer",
-        });
-        return false;
-      }
+    if (NewUser.PhoneNumber.length !== 12) {
+      setErrordetails({
+        ...Errordetails,
+        PhoneNumber: "Enter 10 Digit Phone Number",
+      });
+      return false;
+    }
+    if (NewUser.CustomerName.length === 0) {
+      setErrordetails({
+        ...Errordetails,
+        CustomerName: "Enter Customer Name",
+      });
+      return false;
+    }
+    if (
+      NewUser.RefererMobileNumber.length !== 0 &&
+      NewUser.RefererMobileNumber.length !== 12
+    ) {
+      setErrordetails({
+        ...Errordetails,
+        RefererMobileNumber: "Enter 10 Digit Mobile Number of the Referer",
+      });
+      return false;
     }
     return true;
-  }
-  function AddToReferrer(
-    RefereeMobileNumber: string,
-    ReffereeBillAmount: Number,
-    PurchaseDate: Date
-  ) {
-    console.log(RefereeMobileNumber);
-    get(child(dbRef, `users/${RefereeMobileNumber}`))
-      .then((snapshot) => {
-        if (snapshot.exists()) {
-          console.log(snapshot.val());
-          update(
-            ref(
-              db,
-              "users/" +
-                snapshot.val().RefererMobileNumber +
-                "/wallet/" +
-                RefereeMobileNumber +
-                "/"
-            ),
-            {
-              [`${PurchaseDate}`]: ReffereeBillAmount,
-            }
-          ).then(() => {
-            window.location.reload();
-          });
-        } else {
-          console.log(RefereeMobileNumber + "Didn't found");
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-      });
   }
 
   function handleAddDetails() {
@@ -99,15 +82,37 @@ const Registration = () => {
       get(child(dbRef, `users/${NewUser.RefererMobileNumber}`))
         .then((snapshot) => {
           if (snapshot.exists() || NewUser.RefererMobileNumber === "") {
-            update(ref(db, "users/" + NewUser.PhoneNumber), {
-              CustomerName: NewUser.CustomerName,
-              RefererMobileNumber: NewUser.RefererMobileNumber,
-              wallet: "0",
+            get(child(dbRef, `users/${NewUser.PhoneNumber}`)).then((user) => {
+              if (user.exists()) {
+                setSnackbarDetails({
+                  ...SnackbarDetails,
+                  message: "User Already Exists",
+                  isopen: true,
+                });
+              } else {
+                update(ref(db, "users/" + NewUser.PhoneNumber), {
+                  CustomerName: NewUser.CustomerName,
+                  RefererMobileNumber: NewUser.RefererMobileNumber,
+                });
+                setSnackbarDetails({
+                  ...SnackbarDetails,
+                  message: "User Successfully Registered",
+                  isopen: true,
+                });
+                setNewUser({
+                  ...NewUser,
+                  PhoneNumber: "",
+                  CustomerName: "",
+                  RefererMobileNumber: "",
+                });
+              }
             });
-            alert("User Successfully Registered");
-            window.location.reload();
           } else {
-            alert("Enter Correct Referrer Number");
+            setSnackbarDetails({
+              ...SnackbarDetails,
+              message: "Referrer Doesn't Exist",
+              isopen: true,
+            });
             setAPICALLED(false);
           }
         })
@@ -116,8 +121,8 @@ const Registration = () => {
         });
     } else {
       setAPICALLED(false);
+      console.log(Errordetails);
     }
-    console.log(Errordetails);
   }
 
   return (
@@ -132,9 +137,9 @@ const Registration = () => {
       </Typography>
       <StyledTextField
         required
-        error={Errordetails["PhoneNumber"] !== ""}
+        error={Errordetails.PhoneNumber !== ""}
         helperText={
-          Errordetails["PhoneNumber"] === "" ? "" : Errordetails["PhoneNumber"]
+          Errordetails.PhoneNumber === "" ? "" : Errordetails.PhoneNumber
         }
         variant="outlined"
         label="Phone Number"
@@ -145,11 +150,9 @@ const Registration = () => {
       />
       <StyledTextField
         required
-        error={Errordetails["CustomerName"] !== ""}
+        error={Errordetails.CustomerName !== ""}
         helperText={
-          Errordetails["CustomerName"] === ""
-            ? ""
-            : Errordetails["CustomerName"]
+          Errordetails.CustomerName === "" ? "" : Errordetails.CustomerName
         }
         variant="outlined"
         label="Name"
@@ -159,11 +162,11 @@ const Registration = () => {
       />
       <StyledTextField
         required
-        error={Errordetails["RefererMobileNumber"] !== ""}
+        error={Errordetails.RefererMobileNumber !== ""}
         helperText={
-          Errordetails["RefererMobileNumber"] === ""
+          Errordetails.RefererMobileNumber === ""
             ? ""
-            : Errordetails["RefererMobileNumber"]
+            : Errordetails.RefererMobileNumber
         }
         variant="outlined"
         label="Referer Mobile Number"
@@ -179,6 +182,15 @@ const Registration = () => {
       >
         Add Details
       </Button>
+      <Snackbar
+        open={SnackbarDetails.isopen}
+        autoHideDuration={3000}
+        message={SnackbarDetails.message}
+        onClose={() => {
+          setSnackbarDetails({ ...SnackbarDetails, isopen: false });
+          setAPICALLED(false);
+        }}
+      />
     </AddCustomerBox>
   );
 };
