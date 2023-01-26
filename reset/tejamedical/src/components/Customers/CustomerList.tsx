@@ -217,15 +217,173 @@
 //   );
 // }
 
+import Table from "@mui/material/Table";
+import TableBody from "@mui/material/TableBody";
+import TableCell from "@mui/material/TableCell";
+import TableContainer from "@mui/material/TableContainer";
+import TableHead from "@mui/material/TableHead";
+import TableRow from "@mui/material/TableRow";
+import Paper from "@mui/material/Paper";
 import { useState } from "react";
-import { ICustomerDetails, fetchData } from "./CustomerListUtils";
+import { getDatabase, onValue, ref } from "firebase/database";
 
-const CustomerList = () => {
-  const [customerDetails, setCustomerDetails] = useState<ICustomerDetails[]>(
-    []
-  );
-  console.log(fetchData(customerDetails));
-  return <>Hi</>;
+const fetchData = async () => {
+  let customers: ICustomerDetails[] = [];
+  const db = await getDatabase();
+  const usersRef = ref(db, "/users/");
+  await onValue(usersRef, (snapshot) => {
+    snapshot.forEach((childSnapshot) => {
+      let customer: ICustomerDetails = {
+        CustomerName: "",
+        MobileNumber: "",
+        RefererMobileNumber: null,
+        TotalPurchase: 0,
+        CurrentWallet: 0,
+        ExpiredWallet: 0,
+        Wallet: [],
+        AllBills: [],
+      };
+      const keyName = "" + childSnapshot.key;
+      const data = childSnapshot.val();
+
+      customer.MobileNumber = keyName;
+      customer.CustomerName = data.CustomerName;
+      customer.RefererMobileNumber = data.RefererMobileNumber;
+
+      if (data.AllBills) {
+        Object.entries(data.AllBills).forEach(() => {
+          customer.AllBills.push({
+            MobileNumber: keyName,
+            Date: data.AllBills.date,
+            Amount: data.AllBills.amount,
+          });
+        });
+      }
+
+      if (data.Wallet) {
+        Object.entries(data.Wallet).forEach(() => {
+          if (data.Wallet.bills) {
+            Object.entries(data.Wallet.bills).forEach(() => {
+              customer.Wallet.push({
+                MobileNumber: data.Wallet.phoneNumber,
+                Date: String(data.Wallet.date),
+                Amount: data.Wallet.amount,
+              });
+            });
+          }
+        });
+      }
+      customers.push(customer);
+    });
+  });
+  return customers;
 };
 
+function createData(
+  CustomerName: string,
+  MobileNumber: string,
+  RefererMobileNumber: string | null,
+  TotalPurchase: number,
+  CurrentWallet: number,
+  ExpiredWallet: number
+) {
+  return {
+    CustomerName,
+    MobileNumber,
+    RefererMobileNumber,
+    TotalPurchase,
+    CurrentWallet,
+    ExpiredWallet,
+  };
+}
+
+const CustomerList = () => {
+  const [customers, setCustomers] = useState<ICustomerDetails[]>([]);
+  let rows: {
+    CustomerName: string;
+    MobileNumber: string;
+    RefererMobileNumber: string | null;
+    TotalPurchase: number;
+    CurrentWallet: number;
+    ExpiredWallet: number;
+  }[] = [];
+
+  const data = fetchData();
+  // setCustomers(data);
+
+  if (customers) {
+    customers.forEach(
+      (customer: {
+        CustomerName: string;
+        MobileNumber: string;
+        RefererMobileNumber: string | null;
+        TotalPurchase: number;
+        CurrentWallet: number;
+        ExpiredWallet: number;
+      }) => {
+        rows.push(
+          createData(
+            customer.CustomerName,
+            customer.MobileNumber,
+            customer.RefererMobileNumber,
+            customer.TotalPurchase,
+            customer.CurrentWallet,
+            customer.ExpiredWallet
+          )
+        );
+      }
+    );
+  }
+
+  return (
+    <TableContainer component={Paper} sx={{ maxWidth: 900 }}>
+      <Table aria-label="simple table">
+        <TableHead>
+          <TableRow>
+            <TableCell>Customer Name</TableCell>
+            <TableCell align="right">Phone Number</TableCell>
+            <TableCell align="right">Referer Number</TableCell>
+            <TableCell align="right">Current Wallet</TableCell>
+            <TableCell align="right">Total Purchased</TableCell>
+            <TableCell align="right">Expired Wallet</TableCell>
+          </TableRow>
+        </TableHead>
+        <TableBody>
+          {rows.map((row) => (
+            <TableRow
+              key={row.CustomerName}
+              sx={{ "&:last-child td, &:last-child th": { border: 0 } }}
+            >
+              <TableCell component="th" scope="row">
+                {row.CustomerName}
+              </TableCell>
+              <TableCell align="right">{row.MobileNumber}</TableCell>
+              <TableCell align="right">{row.RefererMobileNumber}</TableCell>
+              <TableCell align="right">{row.CurrentWallet}</TableCell>
+              <TableCell align="right">{row.TotalPurchase}</TableCell>
+              <TableCell align="right">{row.CurrentWallet}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </TableContainer>
+  );
+};
 export default CustomerList;
+
+export interface Bill {
+  MobileNumber: string;
+  Date: string;
+  Amount: string;
+}
+
+export interface ICustomerDetails {
+  CustomerName: string;
+  MobileNumber: string;
+  RefererMobileNumber: string | null;
+  TotalPurchase: number;
+  CurrentWallet: number;
+  ExpiredWallet: number;
+  Wallet: Bill[];
+  AllBills: Bill[];
+}
