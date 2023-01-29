@@ -141,7 +141,7 @@ export default function CollapsibleTable() {
           <TableRow>
             <TableCell />
             <TableCell>Customer Name</TableCell>
-            <TableCell align="right">Customer Mobile Number</TableCell>
+            <TableCell align="right">Customer Mobile number</TableCell>
             <TableCell align="right">Total Purchases</TableCell>
             <TableCell align="right">Total Savings</TableCell>
             <TableCell align="right">Current Wallet</TableCell>

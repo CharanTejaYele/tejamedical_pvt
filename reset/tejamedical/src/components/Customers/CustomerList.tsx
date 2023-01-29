@@ -201,7 +201,7 @@
 //           <TableRow>
 //             <TableCell />
 //             <TableCell>Customer Name</TableCell>
-//             <TableCell align="right">Customer Mobile Number</TableCell>
+//             <TableCell align="right">Customer Mobile number</TableCell>
 //             <TableCell align="right">Total Purchases</TableCell>
 //             <TableCell align="right">Total Savings</TableCell>
 //             <TableCell align="right">Current Wallet</TableCell>
@@ -341,8 +341,8 @@ const CustomerList = () => {
         <TableHead>
           <TableRow>
             <TableCell>Customer Name</TableCell>
-            <TableCell align="right">Phone Number</TableCell>
-            <TableCell align="right">Referer Number</TableCell>
+            <TableCell align="right">Phone number</TableCell>
+            <TableCell align="right">Referer number</TableCell>
             <TableCell align="right">Current Wallet</TableCell>
             <TableCell align="right">Total Purchased</TableCell>
             <TableCell align="right">Expired Wallet</TableCell>

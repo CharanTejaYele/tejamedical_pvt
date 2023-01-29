@@ -1,17 +1,19 @@
-import { useEffect, useState } from "react";
-import { AddCustomerBox, StyledTextField } from "./Billing.styles";
-import { Button, Snackbar, Typography } from "@mui/material";
-import { Formatnumber, formatAmount, formatPhoneNumber } from "../utils";
-import { child, get, getDatabase, ref, update } from "firebase/database";
-import { useNavigate } from "react-router-dom";
+import { Typography, Button, Snackbar } from "@mui/material";
 import { onAuthStateChanged } from "firebase/auth";
-import { auth } from "../../firebase-config";
+import { useState } from "react";
+import {
+  Formatnumber,
+  HandleNewBill,
+  HandleNewCustomer,
+  auth,
+  formatAmount,
+  formatPhoneNumber,
+} from "../utils";
+import { AddCustomerBox, StyledTextField } from "./Billing.styles";
+import { useNavigate } from "react-router-dom";
 
-const Billing = () => {
-  const db = getDatabase();
-  const dbRef = ref(getDatabase());
+export const Billing = () => {
   const navigate = useNavigate();
-
   onAuthStateChanged(auth, (user) => {
     if (!user) {
       navigate("/login");
@@ -73,14 +75,14 @@ const Billing = () => {
     if (BillDetails.PhoneNumber.length !== 12) {
       setErrordetails({
         ...Errordetails,
-        PhoneNumber: "Enter mobile Number",
+        PhoneNumber: "Enter mobile number",
       });
       return false;
     }
-    if (Formatnumber(BillDetails.Amount) < 500) {
+    if (Formatnumber(BillDetails.Amount) < 100) {
       setErrordetails({
         ...Errordetails,
-        Amount: "Enter Amount greater than 500",
+        Amount: "Enter Amount greater than 100",
       });
       return false;
     }
@@ -89,7 +91,7 @@ const Billing = () => {
         if (NewUser.RefererMobileNumber.length !== 12) {
           setErrordetails({
             ...Errordetails,
-            RefererMobileNumber: "Enter 10 Digit Mobile Number of the Referer",
+            RefererMobileNumber: "Enter 10 Digit Mobile number of the Referer",
           });
           return false;
         }
@@ -105,124 +107,93 @@ const Billing = () => {
     return true;
   }
 
-  function AddToReferrer(
-    RefereeMobileNumber: string,
-    AmountToAddToWallet: Number,
-    PurchaseDate: Date
-  ) {
-    console.log(RefereeMobileNumber);
-    get(child(dbRef, `users/${RefereeMobileNumber}`))
-      .then((snapshot) => {
-        console.log(snapshot.val());
-        if (snapshot.val().RefererMobileNumber !== "") {
-          update(
-            ref(
-              db,
-              "users/" +
-                snapshot.val().RefererMobileNumber +
-                "/Wallet/" +
-                RefereeMobileNumber +
-                "/"
-            ),
-            {
-              [`${PurchaseDate}`]: AmountToAddToWallet,
-            }
-          ).then(() => {
-            window.location.reload();
-          });
-        } else {
-          console.log(RefereeMobileNumber + " : Has no Referrer");
-        }
-      })
-      .catch((error) => {
-        console.error(error);
-      });
-  }
-
-  function handleAddDetails() {
+  const handleAddDetails = async () => {
     setAPICALLED(true);
     if (Validate()) {
-      const date = new Date();
       if (NewUser.NewUser) {
-        if (NewUser.RefererMobileNumber === "") {
-          update(ref(db, "users/" + BillDetails.PhoneNumber), {
-            CustomerName: NewUser.CustomerName,
-            RefererMobileNumber: NewUser.RefererMobileNumber,
-            AllBills: {
-              [`${date}`]: Formatnumber(BillDetails.Amount),
-            },
-          }).then(() => {
-            window.location.reload();
+        const response = await HandleNewCustomer({
+          PhoneNumber: BillDetails.PhoneNumber,
+          RefererMobileNumber: NewUser.RefererMobileNumber,
+          Name: NewUser.CustomerName,
+        });
+        if (response === "User successfully added!") {
+        } else if (response === "User already exists!") {
+          setSnackbarDetails({
+            ...SnackbarDetails,
+            message: "User already exists!",
+            isopen: true,
           });
+          return;
+        } else if (response === "Referrer does not Exist") {
+          setSnackbarDetails({
+            ...SnackbarDetails,
+            message: "Referrer does not Exist",
+            isopen: true,
+          });
+          return;
         } else {
-          get(child(dbRef, `users/${NewUser.RefererMobileNumber}`))
-            .then((snapshot) => {
-              if (snapshot.exists()) {
-                console.log(snapshot.val());
-                update(ref(db, "users/" + BillDetails.PhoneNumber), {
-                  CustomerName: NewUser.CustomerName,
-                  RefererMobileNumber: NewUser.RefererMobileNumber,
-                  AllBills: {
-                    [`${date}`]: Formatnumber(BillDetails.Amount),
-                  },
-                });
-                AddToReferrer(
-                  BillDetails.PhoneNumber,
-                  Formatnumber(BillDetails.Amount) / 10,
-                  date
-                );
-              } else {
-                setSnackbarDetails({
-                  ...SnackbarDetails,
-                  message: "Referrer Doesn't Exist",
-                  isopen: true,
-                });
-                setAPICALLED(false);
-              }
-            })
-            .catch((error) => {
-              console.error(error);
-            });
-        }
-      } else {
-        get(child(dbRef, `users/${BillDetails.PhoneNumber}`))
-          .then((snapshot) => {
-            if (snapshot.exists()) {
-              console.log(snapshot.val());
-              update(
-                ref(db, "users/" + BillDetails.PhoneNumber + "/AllBills/"),
-                {
-                  [`${date}`]: Formatnumber(BillDetails.Amount),
-                }
-              );
-
-              if (snapshot.val().RefererMobileNumber !== "") {
-                AddToReferrer(
-                  BillDetails.PhoneNumber,
-                  Formatnumber(BillDetails.Amount) / 10,
-                  date
-                );
-              }
-
-              AddToReferrer(
-                BillDetails.PhoneNumber,
-                Formatnumber(BillDetails.Amount) / 10,
-                date
-              );
-            } else {
-              setNewUser({ ...NewUser, NewUser: true });
-              setAPICALLED(false);
-            }
-          })
-          .catch((error) => {
-            console.error(error);
+          setSnackbarDetails({
+            ...SnackbarDetails,
+            message: "Something went wrong!",
+            isopen: true,
           });
+          return;
+        }
+      }
+
+      const newResponse = await HandleNewBill({
+        PhoneNumber: BillDetails.PhoneNumber,
+        Amount: BillDetails.Amount,
+      });
+      if (newResponse === "Success") {
+        setSnackbarDetails({
+          ...SnackbarDetails,
+          message: "Bill successfully updated",
+          isopen: true,
+        });
+        setNewUser({
+          ...NewUser,
+          NewUser: false,
+          CustomerName: "",
+          RefererMobileNumber: "",
+        });
+      } else if (newResponse === "New User") {
+        setSnackbarDetails({
+          ...SnackbarDetails,
+          message: "New User",
+          isopen: true,
+        });
+        setNewUser({ ...NewUser, NewUser: true });
+      } else if (
+        newResponse === "Bill successful and amount added to referrer"
+      ) {
+        setSnackbarDetails({
+          ...SnackbarDetails,
+          message: "Bill successful and amount added to referrer",
+          isopen: true,
+        });
+        setNewUser({
+          ...NewUser,
+          NewUser: false,
+          CustomerName: "",
+          RefererMobileNumber: "",
+        });
+      } else {
+        setSnackbarDetails({
+          ...SnackbarDetails,
+          message: "Something went wrong!",
+          isopen: true,
+        });
       }
     } else {
-      setAPICALLED(false);
+      setSnackbarDetails({
+        ...SnackbarDetails,
+        message: "Check Errors",
+        isopen: true,
+      });
     }
-    console.log(Errordetails);
-  }
+    setAPICALLED(false);
+  };
 
   return (
     <AddCustomerBox>
@@ -241,7 +212,7 @@ const Billing = () => {
           Errordetails["PhoneNumber"] === "" ? "" : Errordetails["PhoneNumber"]
         }
         variant="outlined"
-        label="Phone Number"
+        label="Phone number"
         sx={{ marginBottom: "20px" }}
         onChange={handleChange("PhoneNumber")}
         inputProps={{ maxLength: 12 }}
@@ -291,7 +262,7 @@ const Billing = () => {
                 : Errordetails["RefererMobileNumber"]
             }
             variant="outlined"
-            label="Referer Mobile Number"
+            label="Referer Mobile number"
             sx={{ marginBottom: "20px" }}
             onChange={handleChange("RefererMobileNumber")}
             value={NewUser.RefererMobileNumber}

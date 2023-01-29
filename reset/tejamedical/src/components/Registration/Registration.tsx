@@ -1,15 +1,12 @@
 import { useState } from "react";
 import { AddCustomerBox, StyledTextField } from "../Billing/Billing.styles";
 import { Button, Snackbar, Typography } from "@mui/material";
-import { child, get, getDatabase, ref, update } from "firebase/database";
-import { onAuthStateChanged } from "firebase/auth";
 import { useNavigate } from "react-router-dom";
-import { formatPhoneNumber } from "../utils";
+import { HandleNewCustomer, formatPhoneNumber } from "../utils";
 import { auth } from "../../firebase-config";
+import { onAuthStateChanged } from "firebase/auth";
 
 const Registration = () => {
-  const db = getDatabase();
-  const dbRef = ref(getDatabase());
   const navigate = useNavigate();
 
   onAuthStateChanged(auth, (user) => {
@@ -62,7 +59,7 @@ const Registration = () => {
     if (NewUser.PhoneNumber.length !== 12) {
       setErrordetails({
         ...Errordetails,
-        PhoneNumber: "Enter 10 Digit Phone Number",
+        PhoneNumber: "Enter 10 Digit Phone number",
       });
       return false;
     }
@@ -79,61 +76,53 @@ const Registration = () => {
     ) {
       setErrordetails({
         ...Errordetails,
-        RefererMobileNumber: "Enter 10 Digit Mobile Number of the Referer",
+        RefererMobileNumber: "Enter 10 Digit Mobile number of the Referer",
       });
       return false;
     }
     return true;
   }
 
-  function handleAddDetails() {
+  const handleAddDetails = async () => {
     setAPICALLED(true);
     if (Validate()) {
-      get(child(dbRef, `users/${NewUser.RefererMobileNumber}`))
-        .then((snapshot) => {
-          if (snapshot.exists() || NewUser.RefererMobileNumber === "") {
-            get(child(dbRef, `users/${NewUser.PhoneNumber}`)).then((user) => {
-              if (user.exists()) {
-                setSnackbarDetails({
-                  ...SnackbarDetails,
-                  message: "User Already Exists",
-                  isopen: true,
-                });
-              } else {
-                update(ref(db, "users/" + NewUser.PhoneNumber), {
-                  CustomerName: NewUser.CustomerName,
-                  RefererMobileNumber: NewUser.RefererMobileNumber,
-                });
-                setSnackbarDetails({
-                  ...SnackbarDetails,
-                  message: "User Successfully Registered",
-                  isopen: true,
-                });
-                setNewUser({
-                  ...NewUser,
-                  PhoneNumber: "",
-                  CustomerName: "",
-                  RefererMobileNumber: "",
-                });
-              }
-            });
-          } else {
-            setSnackbarDetails({
-              ...SnackbarDetails,
-              message: "Referrer Doesn't Exist",
-              isopen: true,
-            });
-            setAPICALLED(false);
-          }
-        })
-        .catch((error) => {
-          console.error(error);
+      const response = await HandleNewCustomer({
+        PhoneNumber: NewUser.PhoneNumber,
+        RefererMobileNumber: NewUser.RefererMobileNumber,
+        Name: NewUser.CustomerName,
+      });
+      if (response === "User successfully added!") {
+      } else if (response === "User already exists!") {
+        setSnackbarDetails({
+          ...SnackbarDetails,
+          message: "User already exists!",
+          isopen: true,
         });
+        return;
+      } else if (response === "Referrer does not Exist") {
+        setSnackbarDetails({
+          ...SnackbarDetails,
+          message: "Referrer does not Exist",
+          isopen: true,
+        });
+        return;
+      } else {
+        setSnackbarDetails({
+          ...SnackbarDetails,
+          message: "Something went wrong!",
+          isopen: true,
+        });
+        return;
+      }
     } else {
-      setAPICALLED(false);
-      console.log(Errordetails);
+      setSnackbarDetails({
+        ...SnackbarDetails,
+        message: "Check Errors",
+        isopen: true,
+      });
     }
-  }
+    setAPICALLED(false);
+  };
 
   return (
     <AddCustomerBox>
@@ -152,7 +141,7 @@ const Registration = () => {
           Errordetails.PhoneNumber === "" ? "" : Errordetails.PhoneNumber
         }
         variant="outlined"
-        label="Phone Number"
+        label="Phone number"
         sx={{ marginBottom: "20px" }}
         onChange={handleChange("PhoneNumber")}
         inputProps={{ maxLength: 12 }}
@@ -179,7 +168,7 @@ const Registration = () => {
             : Errordetails.RefererMobileNumber
         }
         variant="outlined"
-        label="Referer Mobile Number"
+        label="Referer Mobile number"
         sx={{ marginBottom: "20px" }}
         onChange={handleChange("RefererMobileNumber")}
         value={NewUser.RefererMobileNumber}

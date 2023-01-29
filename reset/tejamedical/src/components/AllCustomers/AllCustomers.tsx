@@ -22,70 +22,83 @@ const AllCustomers = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    onValue(
-      ref(db, "/users/"),
-      (snapshot) => {
-        let customersList: ICustomerDetails[] = [];
-        snapshot.forEach((childSnapshot) => {
-          let customer: ICustomerDetails = {
-            CustomerName: "",
-            MobileNumber: "",
-            RefererMobileNumber: null,
-            TotalPurchase: 0,
-            CurrentWallet: 0,
-            ExpiredWallet: 0,
-            Wallet: [],
-            AllBills: [],
-          };
-          const keyName = "" + childSnapshot.key;
-          const data = childSnapshot.val();
+    const fetchData = async () => {
+      try {
+        onValue(
+          ref(db, "/users/"),
+          (snapshot) => {
+            let customersList: ICustomerDetails[] = [];
+            snapshot.forEach((childSnapshot) => {
+              let customer: ICustomerDetails = {
+                CustomerName: "",
+                MobileNumber: "",
+                RefererMobileNumber: null,
+                TotalPurchase: 0,
+                CurrentWallet: 0,
+                ExpiredWallet: 0,
+                Wallet: [],
+                AllBills: [],
+              };
+              const keyName = "" + childSnapshot.key;
+              const data = childSnapshot.val();
 
-          customer.MobileNumber = keyName;
-          customer.CustomerName = data.CustomerName;
-          customer.RefererMobileNumber = data.RefererMobileNumber;
+              customer.MobileNumber = keyName;
+              customer.CustomerName = data.CustomerName;
+              customer.RefererMobileNumber = data.RefererMobileNumber;
+              let LatestDate = new Date("01/01/2000");
 
-          if (data.AllBills) {
-            let totalpurchases = 0;
-            Object.entries(data.AllBills).forEach(([date, amount]) => {
-              totalpurchases += Number(amount);
-              customer.AllBills.push({
-                MobileNumber: keyName,
-                Date: date,
-                Amount: amount + "",
-              });
-            });
-            customer.TotalPurchase = totalpurchases;
-          }
-
-          if (data.Wallet) {
-            let TotalAmount = 0;
-            let CurrentWallet = 0;
-            Object.entries(data.Wallet).forEach(([phoneNumber, bill]) => {
-              if (bill) {
-                Object.entries(bill).forEach(([date, amount]) => {
-                  TotalAmount = TotalAmount + Number(amount);
-                  if (NotExpired(date)) {
-                    CurrentWallet += Number(amount);
+              if (data.AllBills) {
+                let totalpurchases = 0;
+                Object.entries(data.AllBills).forEach(([date, amount]) => {
+                  totalpurchases += Number(amount);
+                  if (new Date(date) > LatestDate) {
+                    LatestDate = new Date(date);
                   }
-                  customer.Wallet.push({
-                    MobileNumber: phoneNumber,
+                  customer.AllBills.push({
+                    MobileNumber: keyName,
                     Date: date,
                     Amount: amount + "",
                   });
                 });
+                customer.TotalPurchase = totalpurchases;
               }
+
+              if (data.Wallet) {
+                let TotalAmount = 0;
+                let CurrentWallet = 0;
+                Object.entries(data.Wallet).forEach(([phoneNumber, bill]) => {
+                  if (bill) {
+                    Object.entries(bill).forEach(([date, amount]) => {
+                      TotalAmount = TotalAmount + Number(amount);
+                      if (NotExpired(date, LatestDate)) {
+                        CurrentWallet += Number(amount);
+                      }
+                      customer.Wallet.push({
+                        MobileNumber: phoneNumber,
+                        Date: date,
+                        Amount: amount + "",
+                      });
+                    });
+                  }
+                });
+                customer.ExpiredWallet = TotalAmount - CurrentWallet;
+                customer.CurrentWallet = CurrentWallet;
+              }
+
+              customersList.push(customer);
             });
-            customer.ExpiredWallet = TotalAmount - CurrentWallet;
-            customer.CurrentWallet = CurrentWallet;
+            setCustomers(customersList);
+          },
+          {
+            onlyOnce: true,
           }
-          customersList.push(customer);
-        });
-        setCustomers(customersList);
-      },
-      {
-        onlyOnce: true,
+        );
+      } catch (error) {
+        console.error(error);
       }
-    );
+    };
+
+    fetchData();
   }, []);
 
   onAuthStateChanged(auth, (user) => {
@@ -105,10 +118,10 @@ const AllCustomers = () => {
             <TableRow>
               <TableCell sx={{ fontWeight: "600" }}>Customer Name</TableCell>
               <TableCell sx={{ fontWeight: "600" }} align="right">
-                Phone Number
+                Phone number
               </TableCell>
               <TableCell sx={{ fontWeight: "600" }} align="right">
-                Referer Number
+                Referer number
               </TableCell>
               <TableCell sx={{ fontWeight: "600" }} align="right">
                 Current Wallet
@@ -117,7 +130,7 @@ const AllCustomers = () => {
                 Total Purchased
               </TableCell>
               <TableCell sx={{ fontWeight: "600" }} align="right">
-                Expired Wallet
+                Total Savings
               </TableCell>
             </TableRow>
           </TableHead>
