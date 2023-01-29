@@ -138,12 +138,12 @@ export interface ICustomerDetails {
   AllBills: Bill[];
 }
 
-export function NotExpired(date: string) {
+export function NotExpired(date: string, LatestDate: Date) {
   const BillDate = new Date(date).getTime();
+  if (LatestDate > new Date(date)) return false;
   const Today = new Date().getTime();
   const diffTime = Math.abs(Today - BillDate);
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
   if (diffDays < 30) return true;
   return false;
 }
-
