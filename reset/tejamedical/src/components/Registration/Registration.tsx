@@ -2,9 +2,10 @@ import { useState } from "react";
 import { AddCustomerBox, StyledTextField } from "../Billing/Billing.styles";
 import { Button, Snackbar, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { HandleNewCustomer, formatPhoneNumber } from "../utils";
+import { HandleNewCustomer } from "../DataUtils";
 import { auth } from "../../firebase-config";
 import { onAuthStateChanged } from "firebase/auth";
+import { formatPhoneNumber } from "../GenericUtils";
 
 const Registration = () => {
   const navigate = useNavigate();
@@ -92,6 +93,12 @@ const Registration = () => {
         Name: NewUser.CustomerName,
       });
       if (response === "User successfully added!") {
+        setNewUser({
+          ...NewUser,
+          PhoneNumber: "",
+          CustomerName: "",
+          RefererMobileNumber: "",
+        });
       } else if (response === "User already exists!") {
         setSnackbarDetails({
           ...SnackbarDetails,

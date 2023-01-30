@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { getDatabase, ref, onValue } from "firebase/database";
-import { ICustomerDetails, NotExpired } from "../Customers/CustomerListUtils";
+import { ICustomerDetails, NotExpired } from "../GenericUtils";
 import {
   Box,
   Paper,
@@ -35,7 +35,7 @@ const AllCustomers = () => {
                 RefererMobileNumber: null,
                 TotalPurchase: 0,
                 CurrentWallet: 0,
-                ExpiredWallet: 0,
+                TotalSavings: 0,
                 Wallet: [],
                 AllBills: [],
               };
@@ -81,7 +81,7 @@ const AllCustomers = () => {
                     });
                   }
                 });
-                customer.ExpiredWallet = TotalAmount - CurrentWallet;
+                customer.TotalSavings = TotalAmount - CurrentWallet;
                 customer.CurrentWallet = CurrentWallet;
               }
 
@@ -149,7 +149,7 @@ const AllCustomers = () => {
                 </TableCell>
                 <TableCell align="right">{row.CurrentWallet}</TableCell>
                 <TableCell align="right">{row.TotalPurchase}</TableCell>
-                <TableCell align="right">{row.ExpiredWallet}</TableCell>
+                <TableCell align="right">{row.TotalSavings}</TableCell>
               </TableRow>
             ))}
           </TableBody>
