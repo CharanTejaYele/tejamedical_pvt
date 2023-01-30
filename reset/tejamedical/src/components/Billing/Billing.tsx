@@ -1,16 +1,10 @@
 import { Typography, Button, Snackbar } from "@mui/material";
 import { onAuthStateChanged } from "firebase/auth";
 import { useState } from "react";
-import {
-  Formatnumber,
-  HandleNewBill,
-  HandleNewCustomer,
-  auth,
-  formatAmount,
-  formatPhoneNumber,
-} from "../utils";
+import { HandleNewBill, HandleNewCustomer, auth } from "../DataUtils";
 import { AddCustomerBox, StyledTextField } from "./Billing.styles";
 import { useNavigate } from "react-router-dom";
+import { Formatnumber, formatAmount, formatPhoneNumber } from "../GenericUtils";
 
 export const Billing = () => {
   const navigate = useNavigate();
@@ -157,6 +151,7 @@ export const Billing = () => {
           CustomerName: "",
           RefererMobileNumber: "",
         });
+        setBillDetails({ ...BillDetails, PhoneNumber: "", Amount: "" });
       } else if (newResponse === "New User") {
         setSnackbarDetails({
           ...SnackbarDetails,
@@ -178,6 +173,7 @@ export const Billing = () => {
           CustomerName: "",
           RefererMobileNumber: "",
         });
+        setBillDetails({ ...BillDetails, PhoneNumber: "", Amount: "" });
       } else {
         setSnackbarDetails({
           ...SnackbarDetails,
